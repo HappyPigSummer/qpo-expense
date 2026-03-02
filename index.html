@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QPO Expense Report</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  padding: 24px 12px;
+}
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  overflow: hidden;
+}
+.header {
+  background: #1a3a5c;
+  color: white;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header h1 { font-size: 22px; font-weight: 700; }
+.header p { font-size: 12px; opacity: 0.7; margin-top: 3px; }
+.body { padding: 28px 32px; }
+.section-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.2px; color: #1a3a5c;
+  border-bottom: 2px solid #1a3a5c; padding-bottom: 5px;
+  margin-bottom: 16px; margin-top: 28px;
+}
+.section-label:first-child { margin-top: 0; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:640px) { .grid-4,.grid-2 { grid-template-columns: 1fr 1fr; } }
+@media(max-width:420px) { .grid-4,.grid-2 { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+.field label .req { color: #c0392b; }
+input[type=text], input[type=date], input[type=email], select {
+  padding: 9px 11px;
+  border: 1.5px solid #d0d5dd;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #222;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  background: #fff;
+  width: 100%;
+}
+input:focus, select:focus { border-color: #1a3a5c; box-shadow: 0 0 0 3px rgba(26,58,92,0.1); }
+.payment-box {
+  border: 1.5px solid #d0d5dd;
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.pay-option {
+  padding: 14px 16px; cursor: pointer;
+  display: flex; align-items: flex-start; gap: 10px;
+  transition: background 0.15s; user-select: none;
+}
+.pay-option:first-child { border-right: 1.5px solid #d0d5dd; }
+.pay-radio {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #aaa; flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+}
+.pay-radio-inner {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #1a3a5c; display: none;
+}
+.pay-option.selected { background: #eef3fa; }
+.pay-option.selected .pay-radio { border-color: #1a3a5c; }
+.pay-option.selected .pay-radio-inner { display: block; }
+.pay-err { color:#c0392b; font-size:11px; margin-top:8px; display:none; }
+.table-wrap { overflow-x: auto; }
+table { width:100%; border-collapse:collapse; min-width:700px; font-size:13px; }
+thead tr { background:#1a3a5c; color:white; }
+thead th { padding:9px 8px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+tbody tr { border-bottom:1px solid #eee; }
+tbody tr:hover { background:#f8f9fb; }
+tbody td { padding:4px; vertical-align:middle; }
+tbody td input, tbody td select {
+  border:1px solid #e0e0e0; border-radius:4px;
+  padding:6px 7px; font-size:12.5px; width:100%;
+  background:transparent; font-family:inherit; outline:none;
+}
+tbody td input:focus, tbody td select:focus { border-color:#1a3a5c; background:#f0f4fa; box-shadow:none; }
+.del-btn { background:none; border:none; color:#c0392b; font-size:18px; cursor:pointer; padding:4px 8px; line-height:1; }
+.add-row-btn {
+  background:#f0f4fa; border:1.5px dashed #1a3a5c;
+  color:#1a3a5c; font-size:13px; font-weight:700;
+  padding:9px; width:100%; border-radius:6px;
+  cursor:pointer; transition:background 0.2s; margin-top:8px;
+  font-family:inherit;
+}
+.add-row-btn:hover { background:#dde6f5; }
+.total-bar {
+  display:flex; justify-content:flex-end; align-items:center;
+  gap:16px; margin-top:10px;
+  background:#1a3a5c; color:white;
+  padding:12px 18px; border-radius:8px;
+  font-size:16px; font-weight:700;
+}
+.upload-zone {
+  border:2px dashed #b0bac5; border-radius:8px;
+  padding:22px; text-align:center; cursor:pointer;
+  transition:border-color 0.2s, background 0.2s; position:relative;
+}
+.upload-zone:hover { border-color:#1a3a5c; background:#f5f8fc; }
+.upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-zone .icon { font-size:32px; margin-bottom:6px; }
+.upload-zone p { color:#888; font-size:13px; }
+.file-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.chip { background:#eef3fa; border-radius:20px; padding:5px 12px; font-size:12px; color:#1a3a5c; display:flex; align-items:center; gap:6px; }
+.chip button { background:none; border:none; color:#888; cursor:pointer; font-size:14px; padding:0; line-height:1; }
+.footnote { font-size:11.5px; color:#999; margin-top:8px; }
+.submit-btn {
+  width:100%; padding:15px;
+  background:#1a3a5c; color:white;
+  border:none; border-radius:8px; font-size:15px;
+  font-weight:700; cursor:pointer; margin-top:20px;
+  transition:background 0.2s; font-family:inherit;
+}
+.submit-btn:hover { background:#243f6a; }
+.submit-btn:disabled { opacity:0.6; cursor:not-allowed; }
+.err { color:#c0392b; font-size:11px; margin-top:3px; display:none; }
+.has-err input, .has-err select { border-color:#c0392b !important; }
+.success-screen { display:none; text-align:center; padding:60px 32px; }
+.success-screen .big { font-size:64px; margin-bottom:16px; }
+.success-screen h2 { color:#1a3a5c; font-size:22px; margin-bottom:10px; }
+.success-screen p { color:#666; font-size:14px; line-height:1.8; }
+.new-btn { margin-top:20px; padding:12px 28px; background:#1a3a5c; color:white; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+/* upload progress */
+.upload-progress { display:none; margin-top:10px; font-size:12px; color:#1a3a5c; background:#eef3fa; border-radius:6px; padding:8px 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>QPO — Expense Report</h1>
+      <p>Complete all fields and attach receipts before submitting</p>
+    </div>
+    <div style="font-size:36px">📋</div>
+  </div>
+
+  <div class="body" id="formBody">
+
+    <div class="section-label">Report Information</div>
+    <div class="grid-4">
+      <div class="field" id="fg-repDate">
+        <label>Date <span class="req">*</span></label>
+        <input type="date" id="repDate">
+        <div class="err">Required</div>
+      </div>
+      <div class="field" id="fg-requester">
+        <label>Requester <span class="req">*</span></label>
+        <input type="text" id="requester" placeholder="Full name">
+        <div class="err">Required</div>
+      </div>
+      <div class="field" id="fg-dept">
+        <label>Department <span class="req">*</span></label>
+        <select id="dept" onchange="autoApprover()">
+          <option value="">Select…</option>
+          <option>Factory</option>
+          <option>Utility</option>
+          <option>Accounting</option>
+          <option>Admin</option>
+          <option>Sales</option>
+          <option>Multi-Department</option>
+        </select>
+        <div class="err">Required</div>
+      </div>
+      <div class="field" id="fg-approver">
+        <label>Approver <span class="req">*</span></label>
+        <select id="approver">
+          <option value="">Select…</option>
+          <option>Mark Lin</option>
+          <option>Deborah Li</option>
+          <option>LeeAnn</option>
+          <option>Annie Cheng</option>
+          <option>Danny</option>
+        </select>
+        <div class="err">Required</div>
+      </div>
+    </div>
+
+    <div class="section-label">Payment Method</div>
+    <div class="payment-box">
+      <div class="pay-option" id="opt-qpo" onclick="selectPay('qpo')">
+        <div class="pay-radio"><div class="pay-radio-inner"></div></div>
+        <div>
+          <div class="pay-label">💳 QPO's Credit Card</div>
+          <div class="pay-desc">Company card used. For record-keeping only — no reimbursement.</div>
+        </div>
+      </div>
+      <div class="pay-option" id="opt-reimb" onclick="selectPay('reimb')">
+        <div class="pay-radio"><div class="pay-radio-inner"></div></div>
+        <div>
+          <div class="pay-label">💵 Reimbursement</div>
+          <div class="pay-desc">Personal card used. Employee will be reimbursed by QPO after approval.</div>
+        </div>
+      </div>
+    </div>
+    <div class="pay-err" id="payErr">Please select a payment method.</div>
+
+    <div class="section-label">Trip Dates</div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Trip Start Date</label>
+        <input type="date" id="tripStart">
+      </div>
+      <div class="field">
+        <label>Trip End Date</label>
+        <input type="date" id="tripEnd">
+      </div>
+    </div>
+
+    <div class="section-label">Expense Details</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:11%">Date of Expense</th>
+            <th style="width:23%">Accounting Category</th>
+            <th style="width:18%">Merchandise / Description</th>
+            <th style="width:6%">Qty</th>
+            <th style="width:10%">Unit Cost ($)</th>
+            <th style="width:18%">Type / Note / Store</th>
+            <th style="width:9%;text-align:right">Sum ($)</th>
+            <th style="width:5%"></th>
+          </tr>
+        </thead>
+        <tbody id="expBody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow()">＋ Add Expense Line</button>
+    <div class="total-bar">
+      <span>Total:</span>
+      <span id="grandTotal">$ 0.00</span>
+    </div>
+
+    <div class="section-label">Receipt Attached</div>
+    <div class="upload-zone">
+      <input type="file" id="fileInput" multiple accept="image/*,.pdf" onchange="handleFiles(this.files)">
+      <div class="icon">🧾</div>
+      <p>Click or drag & drop receipts here<br><span style="font-size:11px">JPG · PNG · PDF · max 10MB each</span></p>
+    </div>
+    <div class="file-chips" id="fileChips"></div>
+    <div class="upload-progress" id="uploadProgress">⏳ Uploading receipts… please wait</div>
+    <p class="footnote">* Receipt attached and manager approval required before reimbursement is processed.</p>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">📤 Submit Expense Report</button>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="big">✅</div>
+    <h2>Report Submitted!</h2>
+    <p>Your expense report has been submitted.<br>
+    Your approver has been notified via email and the entry has been saved to the records sheet.<br><br>
+    Please retain your original receipts until reimbursement is confirmed.</p>
+    <button class="new-btn" onclick="resetForm()">Submit Another Report</button>
+  </div>
+</div>
+
+<script>
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjNMEaB5hmog-p-6fuyqok4N4x39-KhzWm0xNK5WOrd-ZxgRzFt-5Yq2cXtAb_678vQg/exec";
+
+var DEPT_APPROVER = {
+  "Factory":          "Mark Lin",
+  "Utility":          "Deborah Li",
+  "Accounting":       "LeeAnn",
+  "Admin":            "Annie Cheng",
+  "Sales":            "Danny",
+  "Multi-Department": ""
+};
+
+var CATEGORIES = [
+  "Travel: Air and Land Transportation",
+  "Travel: Hotel",
+  "Travel: Employee Meal",
+  "Travel: Rental Car & Gas",
+  "Travel: Mileage Reimbursement",
+  "Travel: Misc Expense",
+  "R&D related: Testing & Research",
+  "Marketing related: Advertising & Promotion",
+  "Office: Equipment",
+  "Office: Office Supplies (small tools)",
+  "Other Expense advance by employee"
+];
+
+var files = [];
+var payMethod = "";
+
+document.getElementById('repDate').value = new Date().toISOString().split('T')[0];
+addRow();
+
+function autoApprover() {
+  var dept = document.getElementById('dept').value;
+  var apv = DEPT_APPROVER[dept];
+  if (apv !== undefined) document.getElementById('approver').value = apv;
+}
+
+function selectPay(val) {
+  payMethod = val;
+  document.getElementById('opt-qpo').classList.toggle('selected', val === 'qpo');
+  document.getElementById('opt-reimb').classList.toggle('selected', val === 'reimb');
+  document.getElementById('payErr').style.display = 'none';
+}
+
+function catOptions(sel) {
+  var opts = '<option value="">Select…</option>';
+  for (var i = 0; i < CATEGORIES.length; i++) {
+    var c = CATEGORIES[i];
+    opts += '<option value="' + c + '"' + (c === sel ? ' selected' : '') + '>' + c + '</option>';
+  }
+  return opts;
+}
+
+function addRow() {
+  var today = new Date().toISOString().split('T')[0];
+  var tbody = document.getElementById('expBody');
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="date" value="' + today + '"></td>' +
+    '<td><select>' + catOptions('') + '</select></td>' +
+    '<td><input type="text" placeholder="e.g. Lunch, Flight…"></td>' +
+    '<td><input type="number" value="1" min="1" step="1" oninput="calcRow(this)" style="width:52px"></td>' +
+    '<td><input type="number" placeholder="0.00" min="0" step="0.01" oninput="calcRow(this)"></td>' +
+    '<td><input type="text" placeholder="e.g. Uber, Alaska Airlines"></td>' +
+    '<td style="text-align:right;font-weight:700;color:#1a3a5c;padding-right:10px;white-space:nowrap" class="rowsum">$ 0.00</td>' +
+    '<td><button class="del-btn" onclick="delRow(this)">×</button></td>';
+  tbody.appendChild(tr);
+}
+
+function calcRow(inp) {
+  var tr = inp.closest('tr');
+  var qty  = parseFloat(tr.cells[3].querySelector('input').value) || 0;
+  var cost = parseFloat(tr.cells[4].querySelector('input').value) || 0;
+  tr.querySelector('.rowsum').textContent = '$ ' + (qty * cost).toFixed(2);
+  updateTotal();
+}
+
+function updateTotal() {
+  var t = 0;
+  document.querySelectorAll('.rowsum').forEach(function(s) {
+    t += parseFloat(s.textContent.replace('$','').trim()) || 0;
+  });
+  document.getElementById('grandTotal').textContent = '$ ' + t.toFixed(2);
+}
+
+function delRow(btn) {
+  if (document.querySelectorAll('#expBody tr').length <= 1) return;
+  btn.closest('tr').remove();
+  updateTotal();
+}
+
+function handleFiles(list) {
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i];
+    if (f.size > 10*1024*1024) { alert(f.name + ' exceeds 10MB.'); continue; }
+    var dup = false;
+    for (var j = 0; j < files.length; j++) { if (files[j].name === f.name) { dup = true; break; } }
+    if (!dup) files.push(f);
+  }
+  renderChips();
+}
+
+// ✅ FIX: Convert all files to base64 for upload
+function encodeFiles() {
+  var promises = files.map(function(f) {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        resolve({
+          name:     f.name,
+          mimeType: f.type || 'application/octet-stream',
+          base64:   e.target.result.split(',')[1]
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+  });
+  return Promise.all(promises);
+}
+
+function renderChips() {
+  var el = document.getElementById('fileChips');
+  el.innerHTML = '';
+  files.forEach(function(f, i) {
+    var c = document.createElement('div');
+    c.className = 'chip';
+    c.innerHTML = '📄 ' + f.name + ' <button onclick="removeFile(' + i + ')">×</button>';
+    el.appendChild(c);
+  });
+}
+
+function removeFile(i) { files.splice(i, 1); renderChips(); }
+
+function validate() {
+  var ok = true;
+  [['repDate','fg-repDate'],['requester','fg-requester'],['dept','fg-dept'],['approver','fg-approver']].forEach(function(p) {
+    var el = document.getElementById(p[0]);
+    var fg = document.getElementById(p[1]);
+    if (!el.value.trim()) {
+      fg.classList.add('has-err');
+      fg.querySelector('.err').style.display = 'block';
+      ok = false;
+    } else {
+      fg.classList.remove('has-err');
+      fg.querySelector('.err').style.display = 'none';
+    }
+  });
+  if (!payMethod) { document.getElementById('payErr').style.display = 'block'; ok = false; }
+  var hasLine = false;
+  document.querySelectorAll('#expBody tr').forEach(function(tr) {
+    if (tr.cells[1].querySelector('select').value && parseFloat(tr.cells[4].querySelector('input').value) > 0) hasLine = true;
+  });
+  if (!hasLine) { alert('Please add at least one expense line with a category and amount.'); ok = false; }
+  return ok;
+}
+
+function collectRows() {
+  var result = [];
+  document.querySelectorAll('#expBody tr').forEach(function(tr) {
+    var cat = tr.cells[1].querySelector('select').value;
+    var cost = tr.cells[4].querySelector('input').value;
+    if (!cat && !parseFloat(cost)) return;
+    result.push({
+      expDate:  tr.cells[0].querySelector('input').value,
+      category: cat,
+      desc:     tr.cells[2].querySelector('input').value,
+      qty:      tr.cells[3].querySelector('input').value,
+      unitCost: cost,
+      store:    tr.cells[5].querySelector('input').value,
+      sum:      tr.querySelector('.rowsum').textContent.replace('$','').trim()
+    });
+  });
+  return result;
+}
+
+function submitForm() {
+  if (!validate()) return;
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+
+  // ✅ FIX: Show upload progress if files exist, then encode & send
+  var prog = document.getElementById('uploadProgress');
+  if (files.length > 0) {
+    prog.style.display = 'block';
+    btn.textContent = '⏳ Uploading receipts…';
+  } else {
+    btn.textContent = '⏳ Submitting…';
+  }
+
+  encodeFiles().then(function(encodedFiles) {
+    prog.style.display = 'none';
+    btn.textContent = '⏳ Submitting…';
+
+    var payload = {
+      repDate:       document.getElementById('repDate').value,
+      requester:     document.getElementById('requester').value.trim(),
+      department:    document.getElementById('dept').value,
+      approver:      document.getElementById('approver').value,
+      paymentMethod: payMethod === 'qpo' ? "QPO's Credit Card" : "Reimbursement",
+      tripStart:     document.getElementById('tripStart').value || "",
+      tripEnd:       document.getElementById('tripEnd').value || "",
+      rows:          collectRows(),
+      total:         document.getElementById('grandTotal').textContent.replace('$','').trim(),
+      submittedAt:   new Date().toLocaleString('en-US'),
+      receipts:      encodedFiles   // ✅ NOW ACTUALLY INCLUDED
+    };
+
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }).then(function() {
+    document.getElementById('formBody').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+  }).catch(function(err) {
+    alert('Submission failed. Please check your connection.\n' + err.message);
+    btn.disabled = false;
+    btn.textContent = '📤 Submit Expense Report';
+    document.getElementById('uploadProgress').style.display = 'none';
+  });
+}
+
+function resetForm() {
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('formBody').style.display = 'block';
+  document.getElementById('requester').value = '';
+  document.getElementById('dept').value = '';
+  document.getElementById('approver').value = '';
+  document.getElementById('repDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('tripStart').value = '';
+  document.getElementById('tripEnd').value = '';
+  document.getElementById('expBody').innerHTML = '';
+  payMethod = '';
+  document.getElementById('opt-qpo').classList.remove('selected');
+  document.getElementById('opt-reimb').classList.remove('selected');
+  document.getElementById('payErr').style.display = 'none';
+  files = []; renderChips(); addRow();
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = false;
+  btn.textContent = '📤 Submit Expense Report';
+}
+</script>
+</body>
+</html>
