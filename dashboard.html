@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Company — Expense Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
+
+.hdr{background:#1a3a5c;color:white;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.hdr h1{font-size:18px;font-weight:700}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.hdr-user{font-size:13px;opacity:0.8}
+.demo-badge{background:rgba(255,200,0,0.25);border:1px solid rgba(255,200,0,0.5);color:#ffd700;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px}
+
+.main{padding:24px 32px;max-width:1200px;margin:0 auto}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:white;border-radius:10px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border-left:4px solid #ccc}
+.stat-card.pending{border-color:#f0c040}
+.stat-card.approved{border-color:#0a5c36}
+.stat-card.rejected{border-color:#842029}
+.stat-card.returned{border-color:#7a5800}
+.stat-num{font-size:28px;font-weight:700;color:#1a3a5c}
+.stat-lbl{font-size:12px;color:#888;text-transform:uppercase;font-weight:600;margin-top:4px}
+
+.filters{background:white;border-radius:10px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.07);margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1}
+.filter-group label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase}
+.filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;font-family:inherit}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:#1a3a5c}
+.btn-reset{padding:8px 18px;background:#f0f2f5;border:1.5px solid #d0d5dd;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600;color:#555}
+.btn-reset:hover{background:#e0e4ea}
+
+.tbl-wrap{background:white;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);overflow:hidden}
+.tbl-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+.tbl-header h2{font-size:15px;font-weight:700;color:#1a3a5c}
+.tbl-count{font-size:12px;color:#888}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fb;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #eee;white-space:nowrap}
+td{padding:11px 14px;font-size:13px;border-bottom:1px solid #f5f5f5;vertical-align:top}
+tr.expandable{cursor:pointer}
+tr.expandable:hover td{background:#fafbfc}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.badge.Pending{background:#fff3cd;color:#7a5800}
+.badge.Approved{background:#d1e7dd;color:#0a5c36}
+.badge.Rejected{background:#f8d7da;color:#842029}
+.badge.Returned{background:#fff3cd;color:#b45309;border:1px solid #f0c040}
+
+.detail-row td{background:#f8f9fb;padding:0}
+.detail-inner{padding:14px 20px;border-top:1px solid #eee}
+.detail-items{width:100%;border-collapse:collapse;margin-top:8px}
+.detail-items th{background:#f0f4fa;padding:7px 10px;font-size:11px;color:#1a3a5c}
+.detail-items td{padding:7px 10px;font-size:12px;border-bottom:1px solid #eee}
+.detail-reason{margin-top:10px;padding:10px 14px;background:#fff8e1;border-radius:6px;font-size:12px;color:#7a5800;border-left:3px solid #f0c040}
+.detail-reason.reject{background:#fdf0f0;color:#842029;border-color:#842029}
+
+.no-data{text-align:center;padding:60px 20px;color:#aaa;font-size:14px}
+
+.demo-note{background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:12px 18px;margin-bottom:20px;font-size:13px;color:#7a5800;text-align:center}
+
+@media(max-width:768px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .main{padding:16px}
+  .hdr{padding:14px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>📊 Demo Company — Expense Dashboard</h1>
+  <div class="hdr-right">
+    <span class="demo-badge">✨ LIVE DEMO</span>
+    <span class="hdr-user">Admin View</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="demo-note">
+    📌 This is a <strong>live demo</strong> with sample data. In production, this dashboard connects to Google Sheets in real time and requires approver login.
+  </div>
+
+  <div class="stats">
+    <div class="stat-card pending"><div class="stat-num" id="cntPending">—</div><div class="stat-lbl">Pending</div></div>
+    <div class="stat-card approved"><div class="stat-num" id="cntApproved">—</div><div class="stat-lbl">Approved</div></div>
+    <div class="stat-card rejected"><div class="stat-num" id="cntRejected">—</div><div class="stat-lbl">Rejected</div></div>
+    <div class="stat-card returned"><div class="stat-num" id="cntReturned">—</div><div class="stat-lbl">Returned</div></div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Search</label>
+      <input type="text" id="fSearch" placeholder="Name, department…" oninput="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select id="fStatus" onchange="applyFilters()">
+        <option value="">All Statuses</option>
+        <option>Pending</option>
+        <option>Approved</option>
+        <option>Rejected</option>
+        <option>Returned</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Department</label>
+      <select id="fDept" onchange="applyFilters()">
+        <option value="">All Departments</option>
+        <option>Sales</option>
+        <option>Engineering</option>
+        <option>Marketing</option>
+        <option>Operations</option>
+        <option>Finance</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Approver</label>
+      <select id="fApprover" onchange="applyFilters()">
+        <option value="">All Approvers</option>
+        <option>Alex Johnson</option>
+        <option>Sarah Chen</option>
+        <option>Mike Torres</option>
+        <option>Rachel Kim</option>
+        <option>David Park</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>From</label>
+      <input type="date" id="fFrom" onchange="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>To</label>
+      <input type="date" id="fTo" onchange="applyFilters()">
+    </div>
+    <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header">
+      <h2>Expense Reports</h2>
+      <span class="tbl-count" id="tblCount"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Submitted</th>
+          <th>Requester</th>
+          <th>Department</th>
+          <th>Approver</th>
+          <th>Payment</th>
+          <th style="text-align:right">Total</th>
+          <th>Status</th>
+          <th>Decided</th>
+        </tr>
+      </thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+    <div id="noData" class="no-data" style="display:none">No records match your filters.</div>
+  </div>
+</div>
+
+<script>
+const DEMO_DATA = [
+  {
+    submittedAt: '2026-02-10',
+    requester: 'Emily Carter',
+    department: 'Sales',
+    approver: 'Alex Johnson',
+    paymentMethod: 'Company Credit Card',
+    total: 1245.00,
+    status: 'Approved',
+    approvedAt: '2026-02-11',
+    rejectReason: '',
+    rows: [
+      { expDate:'Feb 8, 2026', category:'Travel: Air and Land Transportation', desc:'Flight to NYC', sum:980.00 },
+      { expDate:'Feb 9, 2026', category:'Travel: Hotel', desc:'Marriott 1 night', sum:215.00 },
+      { expDate:'Feb 9, 2026', category:'Travel: Employee Meal', desc:'Client dinner', sum:50.00 }
+    ]
+  },
+  {
+    submittedAt: '2026-02-14',
+    requester: 'James Wu',
+    department: 'Engineering',
+    approver: 'Sarah Chen',
+    paymentMethod: 'Personal Card (Reimbursement)',
+    total: 349.99,
+    status: 'Approved',
+    approvedAt: '2026-02-15',
+    rejectReason: '',
+    rows: [
+      { expDate:'Feb 13, 2026', category:'Software / Subscription', desc:'AWS credits', sum:249.99 },
+      { expDate:'Feb 13, 2026', category:'Office Supplies', desc:'Mechanical keyboard', sum:100.00 }
+    ]
+  },
+  {
+    submittedAt: '2026-02-18',
+    requester: 'Sofia Reyes',
+    department: 'Marketing',
+    approver: 'Mike Torres',
+    paymentMethod: 'Company Credit Card',
+    total: 520.00,
+    status: 'Returned',
+    approvedAt: '2026-02-19',
+    rejectReason: 'Please attach receipts for all items over $50 and clarify the business purpose for the client entertainment expense.',
+    rows: [
+      { expDate:'Feb 17, 2026', category:'Client Entertainment', desc:'Team lunch', sum:320.00 },
+      { expDate:'Feb 17, 2026', category:'Travel: Employee Meal', desc:'Working dinner', sum:200.00 }
+    ]
+  },
+  {
+    submittedAt: '2026-02-22',
+    requester: 'Daniel Kim',
+    department: 'Operations',
+    approver: 'Rachel Kim',
+    paymentMethod: 'Personal Card (Reimbursement)',
+    total: 87.50,
+    status: 'Rejected',
+    approvedAt: '2026-02-23',
+    rejectReason: 'This expense does not fall within company reimbursement policy. Personal gym memberships are not covered.',
+    rows: [
+      { expDate:'Feb 21, 2026', category:'Other', desc:'Gym membership', sum:87.50 }
+    ]
+  },
+  {
+    submittedAt: '2026-02-28',
+    requester: 'Priya Sharma',
+    department: 'Finance',
+    approver: 'David Park',
+    paymentMethod: 'Personal Card (Reimbursement)',
+    total: 673.00,
+    status: 'Pending',
+    approvedAt: '',
+    rejectReason: '',
+    rows: [
+      { expDate:'Feb 26, 2026', category:'Travel: Rental Car & Gas', desc:'Car rental 3 days', sum:420.00 },
+      { expDate:'Feb 26, 2026', category:'Travel: Hotel', desc:'Hilton 2 nights', sum:253.00 }
+    ]
+  },
+  {
+    submittedAt: '2026-03-01',
+    requester: 'Lucas Andrade',
+    department: 'Sales',
+    approver: 'Alex Johnson',
+    paymentMethod: 'Company Credit Card',
+    total: 2150.00,
+    status: 'Pending',
+    approvedAt: '',
+    rejectReason: '',
+    rows: [
+      { expDate:'Feb 28, 2026', category:'Travel: Air and Land Transportation', desc:'Flight to SF', sum:1200.00 },
+      { expDate:'Mar 1, 2026',  category:'Travel: Hotel', desc:'Hotel 2 nights', sum:680.00 },
+      { expDate:'Mar 1, 2026',  category:'Client Entertainment', desc:'Client dinner', sum:270.00 }
+    ]
+  }
+];
+
+let allRecords = [...DEMO_DATA];
+
+function applyFilters() {
+  const search   = document.getElementById('fSearch').value.toLowerCase();
+  const status   = document.getElementById('fStatus').value;
+  const dept     = document.getElementById('fDept').value;
+  const approver = document.getElementById('fApprover').value;
+  const from     = document.getElementById('fFrom').value;
+  const to       = document.getElementById('fTo').value;
+
+  const filtered = allRecords.filter(r => {
+    if (status   && r.status     !== status)   return false;
+    if (dept     && r.department !== dept)     return false;
+    if (approver && r.approver   !== approver) return false;
+    if (from && r.submittedAt < from) return false;
+    if (to   && r.submittedAt > to)   return false;
+    if (search) {
+      const hay = (r.requester+r.department+r.approver).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  updateStats(filtered);
+  renderTable(filtered);
+}
+
+function resetFilters() {
+  ['fSearch','fStatus','fDept','fApprover','fFrom','fTo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  applyFilters();
+}
+
+function updateStats(records) {
+  const c = { Pending:0, Approved:0, Rejected:0, Returned:0 };
+  records.forEach(r => { if (c[r.status]!==undefined) c[r.status]++; });
+  document.getElementById('cntPending').textContent  = c.Pending;
+  document.getElementById('cntApproved').textContent = c.Approved;
+  document.getElementById('cntRejected').textContent = c.Rejected;
+  document.getElementById('cntReturned').textContent = c.Returned;
+}
+
+function renderTable(records) {
+  const tbody = document.getElementById('tblBody');
+  const noData = document.getElementById('noData');
+  tbody.innerHTML = '';
+  document.getElementById('tblCount').textContent = records.length + ' record' + (records.length!==1?'s':'');
+
+  if (!records.length) { noData.style.display='block'; return; }
+  noData.style.display = 'none';
+
+  records.forEach((rec, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = 'expandable';
+    tr.onclick = () => toggleDetail(idx);
+    tr.innerHTML =
+      '<td>' + rec.submittedAt + '</td>' +
+      '<td><strong>' + rec.requester + '</strong></td>' +
+      '<td>' + rec.department + '</td>' +
+      '<td>' + rec.approver + '</td>' +
+      '<td>' + rec.paymentMethod + '</td>' +
+      '<td style="text-align:right;font-weight:700">$' + rec.total.toFixed(2) + '</td>' +
+      '<td><span class="badge ' + rec.status + '">' + rec.status + '</span></td>' +
+      '<td style="color:#888;font-size:12px">' + (rec.approvedAt || '—') + '</td>';
+    tbody.appendChild(tr);
+
+    const dr = document.createElement('tr');
+    dr.className = 'detail-row';
+    dr.id = 'detail-' + idx;
+    dr.style.display = 'none';
+
+    const itemsHtml = rec.rows.map(r =>
+      '<tr><td>' + r.expDate + '</td><td>' + r.category + '</td><td>' + r.desc + '</td><td style="text-align:right">$' + r.sum.toFixed(2) + '</td></tr>'
+    ).join('');
+
+    const reasonHtml = rec.rejectReason
+      ? '<div class="detail-reason ' + (rec.status==='Rejected'?'reject':'') + '"><strong>' + (rec.status==='Returned'?'Revision Notes':'Reason') + ':</strong> ' + rec.rejectReason + '</div>'
+      : '';
+
+    dr.innerHTML = '<td colspan="8"><div class="detail-inner">' +
+      '<table class="detail-items"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th style="text-align:right">Sum</th></tr></thead><tbody>' +
+      itemsHtml + '</tbody></table>' + reasonHtml + '</div></td>';
+    tbody.appendChild(dr);
+  });
+}
+
+function toggleDetail(idx) {
+  const dr = document.getElementById('detail-' + idx);
+  dr.style.display = dr.style.display === 'none' ? 'table-row' : 'none';
+}
+
+// Init
+applyFilters();
+</script>
+</body>
+</html>
