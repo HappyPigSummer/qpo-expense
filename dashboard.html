@@ -81,7 +81,7 @@ tr.expandable:hover td{background:#fafbfc}
 <div class="main">
 
   <div class="demo-note">
-    📌 This is a <strong>live demo</strong> with sample data. In production, this dashboard connects to Google Sheets in real time and requires approver login.
+    📌 This dashboard shows <strong>real submissions</strong> at the top + sample data below. Submit the <a href="index.html" style="color:#7a5800;font-weight:700">expense form</a> and refresh to see your entry appear!
   </div>
 
   <div class="stats">
@@ -164,6 +164,8 @@ tr.expandable:hover td{background:#fafbfc}
 </div>
 
 <script>
+const DEPLOYED_URL = "https://script.google.com/macros/s/AKfycbyFReuzjWVkhK_CDi-lcCqWElii15YHYuxp4gOdpqBBP-wSgrO94HBuyjuvSknUc4WF/exec";
+
 const DEMO_DATA = [
   {
     submittedAt: '2026-02-10',
@@ -260,6 +262,32 @@ const DEMO_DATA = [
 
 let allRecords = [...DEMO_DATA];
 
+// Fetch real submissions from Google Sheets
+async function fetchLiveRecords() {
+  try {
+    const res = await fetch(DEPLOYED_URL + '?action=getPublicRecords');
+    const data = await res.json();
+    if (data.records && data.records.length > 0) {
+      // Merge: real records on top, demo data below
+      allRecords = [...data.records, ...DEMO_DATA];
+    }
+  } catch(e) {
+    console.log('Could not fetch live records, using demo data');
+  }
+  applyFilters();
+}
+
+// Show live indicator
+function setLiveIndicator(live) {
+  const badge = document.querySelector('.demo-badge');
+  if (live) {
+    badge.innerHTML = '🟢 LIVE';
+    badge.style.background = 'rgba(0,200,100,0.2)';
+    badge.style.borderColor = 'rgba(0,200,100,0.5)';
+    badge.style.color = '#00e676';
+  }
+}
+
 function applyFilters() {
   const search   = document.getElementById('fSearch').value.toLowerCase();
   const status   = document.getElementById('fStatus').value;
@@ -350,8 +378,8 @@ function toggleDetail(idx) {
   dr.style.display = dr.style.display === 'none' ? 'table-row' : 'none';
 }
 
-// Init
-applyFilters();
+// Init — fetch live data first, fall back to demo data
+fetchLiveRecords().then(() => setLiveIndicator(true)).catch(() => applyFilters());
 </script>
 </body>
 </html>
